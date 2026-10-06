@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gıda Kimyası — Online Quiz</title>
+<style>
+  :root{
+    --ink:#1c2530;
+    --paper:#faf8f3;
+    --card:#f1eee5;
+    --line:#d8d2c2;
+    --sage:#5f7d5a;
+    --sage-dark:#456140;
+    --red:#a33d2e;
+    --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    --sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); line-height:1.55; }
+  header{ background:var(--ink); color:var(--paper); padding:22px 24px 0 24px; }
+  header .title-row{ display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; max-width:900px; margin:0 auto 14px auto; }
+  header h1{ font-family:var(--serif); font-weight:600; font-size:1.6rem; margin:0; }
+  header .term{ font-size:0.85rem; opacity:0.7; }
+  nav{ max-width:900px; margin:0 auto; display:flex; gap:2px; flex-wrap:wrap; }
+  nav button{ background:none; border:none; color:var(--paper); opacity:0.65; font-family:var(--sans); font-size:0.95rem; padding:12px 18px; cursor:pointer; border-bottom:3px solid transparent; }
+  nav button.active{ opacity:1; border-bottom:3px solid var(--sage); }
+  main{ max-width:900px; margin:0 auto; padding:32px 24px 80px 24px; }
+  .view{ display:none; }
+  .view.active{ display:block; }
+  h2{ font-family:var(--serif); font-size:1.5rem; margin:0 0 6px 0; }
+  .lede{ color:#5a5347; max-width:60ch; margin-bottom:28px; }
+  .week-card{ background:var(--card); border:1px solid var(--line); border-radius:4px; padding:18px 20px; margin-bottom:14px; }
+  select, input[type=text], input[type=number], textarea{
+    font-family:var(--sans); font-size:1rem; padding:10px 12px; border:1px solid var(--line);
+    border-radius:4px; background:#fff; width:100%; max-width:460px;
+  }
+  textarea{ resize:vertical; min-height:70px; }
+  label{ display:block; font-size:0.9rem; color:#5a5347; margin-bottom:6px; }
+  .field{ margin-bottom:16px; }
+  button.primary{ background:var(--sage-dark); color:#fff; border:none; border-radius:4px; padding:11px 22px; font-size:0.95rem; cursor:pointer; font-family:var(--sans); }
+  button.primary:hover{ background:var(--sage); }
+  button.ghost{ background:none; border:1px solid var(--line); color:var(--ink); border-radius:4px; padding:8px 16px; font-size:0.9rem; cursor:pointer; }
+  button.danger{ background:none; border:1px solid var(--red); color:var(--red); border-radius:4px; padding:5px 10px; font-size:0.82rem; cursor:pointer; }
+  .question{ border-top:1px solid var(--line); padding:20px 0; }
+  .question:first-of-type{ border-top:none; }
+  .q-text{ font-weight:600; margin-bottom:12px; }
+  .q-num{ color:var(--sage-dark); font-family:var(--serif); }
+  .opt{ display:flex; align-items:flex-start; gap:10px; padding:8px 10px; border-radius:4px; cursor:pointer; margin-bottom:4px; }
+  .opt:hover{ background:#eee9dd; }
+  .opt input{ margin-top:4px; }
+  .result-box{ background:var(--card); border-left:4px solid var(--sage-dark); padding:18px 20px; margin-top:20px; border-radius:4px; }
+  .result-box.fail{ border-left-color:var(--red); }
+  .correct-mark{ color:var(--sage-dark); font-weight:600; }
+  .wrong-mark{ color:var(--red); font-weight:600; }
+  .explain{ font-size:0.88rem; color:#5a5347; margin-top:6px; }
+  .muted{ color:#8a8272; font-size:0.88rem; }
+  table.results{ width:100%; border-collapse:collapse; margin-top:16px; font-size:0.92rem; }
+  table.results th, table.results td{ text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); }
+  .panel-lock{ max-width:360px; }
+  .error-msg{ color:var(--red); font-size:0.9rem; margin-top:6px; }
+  .ok-msg{ color:var(--sage-dark); font-size:0.9rem; margin-top:6px; }
+  .panel-subnav{ display:flex; gap:8px; margin-bottom:22px; flex-wrap:wrap; }
+  .panel-subnav button{ background:none; border:1px solid var(--line); border-radius:4px; padding:8px 14px; font-size:0.9rem; cursor:pointer; color:var(--ink); opacity:0.6; }
+  .panel-subnav button.active{ opacity:1; border-color:var(--sage-dark); color:var(--sage-dark); }
+  .subview{ display:none; }
+  .subview.active{ display:block; }
+  .opt-row{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .opt-row .letter{ width:22px; font-family:var(--serif); color:var(--sage-dark); }
+  .opt-row input[type=text]{ max-width:360px; }
+  fieldset{ border:1px solid var(--line); border-radius:4px; padding:16px 18px; margin-bottom:22px; }
+  legend{ font-family:var(--serif); font-size:1rem; padding:0 6px; }
+  .q-manage-item{ border-top:1px solid var(--line); padding:12px 0; display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
+  .q-manage-item .txt{ font-size:0.92rem; }
+  .q-manage-item .txt .ans{ color:var(--sage-dark); font-size:0.85rem; }
+  .code-box{ background:#fff; border:1px solid var(--line); border-radius:4px; padding:12px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.9rem; margin-top:10px; word-break:break-word; user-select:all; }
+  @media (max-width:640px){
+    header{ padding:18px 14px 0 14px; }
+    header h1{ font-size:1.3rem; }
+    nav{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    nav button{ padding:11px 13px; font-size:0.88rem; white-space:nowrap; }
+    main{ padding:22px 14px 60px 14px; }
+    h2{ font-size:1.25rem; }
+    select, input[type=text], input[type=number], textarea{ max-width:100%; font-size:16px; }
+    .opt{ padding:12px 10px; border:1px solid var(--line); background:#fff; }
+    .opt input{ width:20px; height:20px; }
+    button.primary{ width:100%; padding:14px 20px; font-size:1rem; }
+    .panel-subnav{ flex-wrap:wrap; }
+    table.results{ font-size:0.82rem; }
+    table.results th, table.results td{ padding:6px 5px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-row">
+    <h1>Gıda Kimyası</h1>
+    <span class="term">2026–2027 Güz Dönemi</span>
+  </div>
+  <nav>
+    <button data-view="home" class="active">Ana Sayfa</button>
+    <button data-view="quiz">Online Quiz</button>
+    <button data-view="panel">Öğretim Elemanı Paneli</button>
+  </nav>
+</header>
+
+<main>
+
+  <section class="view active" id="home">
+    <h2>Ders Sitesine Hoş Geldiniz</h2>
+    <p class="lede">Bu sayfada güncel online quiz yer alır. Ad-soyad ve öğrenci numaranızı girip soruları yanıtlayın; notunuz anında hesaplanır.</p>
+    <div class="week-card">
+      <p>1. "Online Quiz" sekmesine girin.<br>
+         2. Ad-soyad ve öğrenci numaranızı girip soruları yanıtlayın.<br>
+         3. Sonuç ekranında çıkan kodu kopyalayıp mehmethyt67@gmail.com gönderin.</p>
+    </div>
+  </section>
+
+  <section class="view" id="quiz">
+    <h2>Online Quiz</h2>
+    <p class="lede">Bilgilerinizi girip başlayın.</p>
+
+    <div id="quiz-setup">
+      <div class="field">
+        <label for="student-name">Ad Soyad</label>
+        <input type="text" id="student-name" placeholder="Örn. Ayşe Yılmaz">
+      </div>
+      <div class="field">
+        <label for="student-no">Öğrenci Numarası</label>
+        <input type="text" id="student-no" placeholder="Örn. 2023123456">
+      </div>
+      <button class="primary" id="start-quiz-btn">Quize Başla</button>
+      <div class="error-msg" id="quiz-setup-error"></div>
+    </div>
+
+    <div id="quiz-run" style="display:none;">
+      <div id="quiz-questions"></div>
+      <button class="primary" id="submit-quiz-btn">Yanıtları Gönder</button>
+    </div>
+
+    <div id="quiz-result" style="display:none;"></div>
+  </section>
+
+  <section class="view" id="panel">
+    <h2>Öğretim Elemanı Paneli</h2>
+    <div id="panel-lock" class="panel-lock">
+      <p class="lede">Panele girmek için erişim anahtarını girin.</p>
+      <div class="field"><input type="text" id="panel-pass" placeholder="Erişim anahtarı"></div>
+      <button class="primary" id="panel-unlock-btn">Giriş Yap</button>
+      <div class="error-msg" id="panel-error"></div>
+    </div>
+
+    <div id="panel-content" style="display:none;">
+      <div class="panel-subnav">
+        <button data-sub="sub-results" class="active">Öğrenci Sonuçları</button>
+        <button data-sub="sub-manage">Soru Yönetimi</button>
+      </div>
+
+      <div class="subview active" id="sub-results">
+        <p class="muted">Not: Bu tabloda yalnızca <strong>bu cihazda</strong> çözülen quizlerin kayıtları görünür. Öğrenciler kendi telefonlarında çözdüğünde, sonuç ekranındaki bildirim satırını size gönderir.</p>
+        <fieldset>
+          <legend>Sonuç kodunu doğrula</legend>
+          <div class="field">
+            <textarea id="verify-input" style="min-height:60px;max-width:100%;" placeholder="2023123456 | Ayşe Yılmaz | 16/20 | %80 | 16.09.2026 14:32 | Kod:A1B2C3D4"></textarea>
+          </div>
+          <button class="ghost" id="verify-btn">Doğrula</button>
+          <div id="verify-result" style="margin-top:10px;"></div>
+        </fieldset>
+        <div id="panel-results"><p class="muted">Yükleniyor…</p></div>
+      </div>
+
+      <div class="subview" id="sub-manage">
+        <fieldset>
+          <legend>Toplu soru yükle</legend>
+          <p class="muted" style="margin-top:0;">Sorular arasında boş satır bırakın. Seçenek sayısı 2–5 olabilir.</p>
+          <pre style="background:#fff;border:1px solid var(--line);border-radius:4px;padding:12px;font-size:0.82rem;overflow-x:auto;">1. Soru metni?
+A) ...
+B) ...
+C) ...
+D) ...
+Cevap: B
+Açıklama: (isteğe bağlı)</pre>
+          <div class="field">
+            <textarea id="bulk-text" style="min-height:220px;max-width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:0.88rem;" placeholder="Soruları buraya yapıştırın…"></textarea>
+          </div>
+          <div class="field">
+            <label><input type="checkbox" id="bulk-replace" style="width:auto;margin-right:8px;" checked>Mevcut tüm soruları sil, yerine bunları yükle</label>
+          </div>
+          <button class="primary" id="bulk-preview-btn">Kontrol Et ve Yükle</button>
+          <div class="error-msg" id="bulk-error"></div>
+          <div class="ok-msg" id="bulk-ok"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Tek soru ekle</legend>
+          <div class="field">
+            <label for="q-text-input">Soru metni</label>
+            <textarea id="q-text-input" placeholder="Soruyu yazın"></textarea>
+          </div>
+          <div class="field">
+            <label>Seçenekler (doğru olanı işaretleyin)</label>
+            <div class="opt-row"><span class="letter">A)</span><input type="radio" name="correct-opt" value="0" checked><input type="text" id="opt-0" placeholder="Seçenek A"></div>
+            <div class="opt-row"><span class="letter">B)</span><input type="radio" name="correct-opt" value="1"><input type="text" id="opt-1" placeholder="Seçenek B"></div>
+            <div class="opt-row"><span class="letter">C)</span><input type="radio" name="correct-opt" value="2"><input type="text" id="opt-2" placeholder="Seçenek C"></div>
+            <div class="opt-row"><span class="letter">D)</span><input type="radio" name="correct-opt" value="3"><input type="text" id="opt-3" placeholder="Seçenek D"></div>
+          </div>
+          <div class="field">
+            <label for="q-explain-input">Açıklama (isteğe bağlı)</label>
+            <textarea id="q-explain-input"></textarea>
+          </div>
+          <button class="primary" id="add-question-btn">Soruyu Ekle</button>
+          <div class="error-msg" id="q-error-msg"></div>
+          <div class="ok-msg" id="q-ok-msg"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Mevcut sorular</legend>
+          <div id="manage-question-list"><p class="muted">Yükleniyor…</p></div>
+        </fieldset>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* ============================================================
+   Başlangıç soru havuzu — depo boşsa veya sürüm değişmişse
+   buradan zorla yüklenir. Hafta ayrımı YOK, tek bir soru
+   havuzu var.
+   ============================================================ */
+const SEED_QUESTIONS = [
+  { id:"q1", q:"Yağ asitlerinin oksidasyon nedeniyle kaybını azaltmak için aşağıdakilerden hangisi uygun koruma stratejisidir?", options:["Az suda pişirme","Antioksidan kullanımı ve vakum teknolojisi","Pişirme suyunun geri kazanımı","Soğuk işlem ve karanlık ambalaj","Düşük sıcaklıkta işleme"], correct:1, explain:"" },
+  { id:"q2", q:"Aşağıdakilerden hangisi Codex Alimentarius'un standart alanlarından biri DEĞİLDİR?", options:["Pestisit ve veteriner ilaçları için maksimum kalıntı limitleri (MRL)","Katkı maddeleri için ADI değerleri","Ağır metal ve mikotoksin tavan değerleri","Zorunlu besin bildirimi ve alerjen etiketleme","Fermentasyon tankının ısı transferi tasarımı"], correct:4, explain:"" },
+  { id:"q3", q:"Aşağıdakilerden hangisi proses kontaminantı olarak sınıflandırılır?", options:["Aflatoksin","Kurşun","Akrilamid","Okratoksin","Kadmiyum"], correct:2, explain:"" },
+  { id:"q4", q:"Çölyak hastalığının kimyasal temeli aşağıdakilerden hangisidir?", options:["Gluten proteinlerine karşı gelişen otoimmün yıkım","Laktaz enziminin eksikliği","Vazoaktif aminlerin sinir sistemini tetiklemesi","Fıstık proteinlerine karşı gelişen spesifik immün yanıt","Yaşlanmış peynirdeki tiramin birikimi"], correct:0, explain:"" },
+  { id:"q5", q:"Şeker ve amino asit arasındaki reaksiyon sonucu gıdalarda aşağıdakilerden hangisi görülür?", options:["Acılaşma ve kötü koku","Meyvelerde dokunun yumuşaması","Tat değişimi ve yapısal çöküş","İstenmeyen renk koyulaşması ve akrilamid oluşumu","Fotokimyasal renk solması"], correct:3, explain:"" },
+  { id:"q6", q:"Meyvelerdeki enzimatik esmerleşmeden sorumlu enzim ve reaksiyon aşağıdakilerden hangisidir?", options:["Lipaz: Trigliserit → yağ asitleri","Polifenol oksidaz: Fenolikler → kinonlar","Amilaz: Nişasta → maltoz","Laktaz: Laktoz → glukoz + galaktoz","Pepsin: Protein → peptit"], correct:1, explain:"" },
+  { id:"q7", q:"Bir meyve suyunda çözünür kuru madde (Briks) tayini için hangi yöntem kullanılır?", options:["ELISA","HPLC","Polarimetri","Titrimetri","Refraktometri"], correct:4, explain:"" },
+  { id:"q8", q:"Çikolatanın temperlenmesiyle ilgili aşağıdaki ifadelerden hangisi doğrudur?", options:["Form VI ideal kristal yapıdır ve parlak yüzey sağlar.","Form V, yüzeyde yağ lekelenmesine (fat bloom) neden olur.","Form V (34-36 °C) ideal kristal yapıdır; çikolata parlak, pürüzsüz ve kırılgan olur.","Form VI (36-38 °C) çikolatanın kırılganlığını artırır.","Temperleme, konçlama aşamasında uçucu asitleri uzaklaştırmak için yapılır."], correct:2, explain:"" },
+  { id:"q9", q:"Yoğurt üretiminde pH düşüşüne bağlı olarak koagüle olan protein hangisidir?", options:["Kazein","Gluten","Kolajen","Miyoglobin","Zein"], correct:0, explain:"" },
+  { id:"q10", q:"Yüksek basınç işleminin (HPP) soğuk pastörizasyon uygulamasındaki kimyasal temeli aşağıdakilerden hangisidir?", options:["Nişasta jelatinizasyonu","Maillard reaksiyonu","Reaktif oksijen türlerinin üretimi","Isısız protein denatürasyonu","Doku mühendisliği"], correct:3, explain:"" },
+  { id:"q11", q:"Su molekülleri arasındaki hidrojen bağı için aşağıdakilerden hangisi doğrudur?", options:["Bağ enerjisi 5-30 kJ/mol'dür ve kovalent bağdan çok daha zayıftır.","Bağ enerjisi 464 kJ/mol'dür.","Bağ enerjisi kovalent bağa eşdeğerdir.","Yalnızca katı fazda (buzda) oluşur.","Molekül başına en fazla 1 hidrojen bağı oluşur."], correct:0, explain:"" },
+  { id:"q12", q:"Oksijenin (3,44) ve hidrojenin (2,20) elektronegativite değerlerine göre O-H bağı için aşağıdakilerden hangisi doğrudur?", options:["Fark 0,64'tür; apolar kovalent bağ","Fark 1,24'tür; polar kovalent bağ","Fark 2,20'dir; iyonik bağ","Fark 3,44'tür; iyonik bağ","Fark 5,64'tür; polar kovalent bağ"], correct:1, explain:"" },
+  { id:"q13", q:"Suyun dipol momenti 1,85 D iken CO₂'nin 0 D olmasının nedeni nedir?", options:["CO₂'nin molekül ağırlığının daha yüksek olması","CO₂'de hidrojen atomu bulunmaması","CO₂'nin doğrusal yapıda olup net dipol momentinin sıfır olması","CO₂'nin sıvı hâlde bulunması","CO₂'de kovalent bağ bulunmaması"], correct:2, explain:"" },
+  { id:"q14", q:"Benzer molekül ağırlıklı H₂S'nin kaynama noktası -60 °C iken suyun 100 °C olmasının temel nedeni nedir?", options:["Suyun molekül ağırlığının daha yüksek olması","Suyun iyonik bir bileşik olması","Suyun yüzey geriliminin düşük olması","Moleküller arasındaki hidrojen bağları ağı","Suyun dipol momentinin sıfır olması"], correct:3, explain:"" },
+  { id:"q15", q:"Buzun suyun yüzeyinde yüzmesiyle ilgili aşağıdakilerden hangisi doğrudur?", options:["Suyun maksimum yoğunluğa 0 °C'de ulaşması","Buzun yoğunluğunun sıvı sudan yüksek olması","Buzun düzensiz yapıda olması","Suyun donarken hacminin azalması","Buzun hekzagonal kristal yapıda olup yoğunluğunun (0,917 g/cm³) sıvı sudan düşük olması"], correct:4, explain:"" },
+  { id:"q16", q:"Aşağıdakilerden hangisi bağlı suyun özelliklerinden biridir?", options:["Çözücü özelliği yoktur ve mikroorganizmalar tarafından kullanılamaz.","Donma noktası 0 °C'dir.","Mikroorganizma gelişimi için tamamen kullanılabilir.","Gıda içinde serbestçe hareket eder.","Kolayca buharlaşır."], correct:0, explain:"" },
+  { id:"q17", q:"Su aktivitesi (aw) nasıl tanımlanır?", options:["Gıdadaki toplam su miktarının kuru madde miktarına oranı","Serbest suyun ağırlıkça yüzdesi","Gıdadaki suyun buhar basıncının saf suyun buhar basıncına oranı","Gıdadaki suyun kaynama noktasının 100 °C'ye oranı","Bağlı suyun toplam suya oranı"], correct:2, explain:"" },
+  { id:"q18", q:"Meyve ve sebzelerde turgor basıncını (diriliği) sağlayan su, hücrenin hangi bölümünde bulunur?", options:["Hücre duvarı","Vakuol (hücre özsuyu)","Sitoplazma","Hücre zarı","Hücre çekirdeği"], correct:1, explain:"" },
+  { id:"q19", q:"Etüv metodunda kap ağırlığı (W₀) 20,00 g, kap + yaş örnek (W₁) 25,00 g, kap + kuru örnek (W₂) 24,00 g ise örneğin nem miktarı yüzde kaçtır? (Nem % = (W₁ - W₂) / (W₁ - W₀) × 100)", options:["%4","%5","%16","%80","%20"], correct:4, explain:"" },
+  { id:"q20", q:"Ekmeğin bayatlamasının temel mekanizması aşağıdakilerden hangisidir?", options:["Glutenin çözünmesi","Su kaybı nedeniyle nişasta jelatinizasyonunun artması","Mayaların şekeri tüketerek CO₂ üretmesi","Nişasta retrogradasyonu ve suyun yeniden dağılımı","Maillard reaksiyonlarının ilerlemesi"], correct:3, explain:"" }
+];
+
+const TEACHER_KEY = "gida2026"; // Öğretim elemanı erişim anahtarı
+
+// Her içerik güncellemesinde artırılır; artınca cihazdaki eski
+// kayıtlar yok sayılıp SEED_QUESTIONS'daki en güncel içerik zorla yüklenir.
+const SEED_VERSION = 3;
+
+function fnv1aHash(str){
+  let h = 0x811c9dc5;
+  for(let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return (h>>>0).toString(16).padStart(8,'0');
+}
+function buildResultCode(data){
+  return `${data} | Kod:${fnv1aHash(data + "|" + TEACHER_KEY).toUpperCase()}`;
+}
+function verifyResultCode(fullLine){
+  const marker = " | Kod:";
+  const idx = fullLine.lastIndexOf(marker);
+  if(idx === -1) return { ok:false, reason:"Satırda doğrulama kodu bulunamadı." };
+  const data = fullLine.slice(0, idx);
+  const givenHash = fullLine.slice(idx + marker.length).trim().toLowerCase();
+  const expectedHash = fnv1aHash(data + "|" + TEACHER_KEY);
+  return { ok: givenHash === expectedHash, reason: givenHash === expectedHash ? "Kod geçerli, satır değiştirilmemiş." : "Kod uyuşmuyor — satır değiştirilmiş olabilir." };
+}
+
+/* ============================================================
+   Depolama katmanı — üç kademeli, hataya dayanıklı
+   ============================================================ */
+// Not: window.storage (Anthropic'in kalıcı/paylaşımlı depolaması) burada
+// bilinçli olarak KULLANILMIYOR — herkese açık linkte bile Claude hesabına
+// giriş yapılmasını zorunlu kılıyor. Öğrencilerin hesapsız girebilmesi için
+// yalnızca tarayıcının kendi hafızası (localStorage) kullanılıyor.
+const memStore = {};
+const Store = {
+  async get(key){
+    try{ const v = localStorage.getItem(key); if(v != null) return v; }catch(e){}
+    return (key in memStore) ? memStore[key] : null;
+  },
+  async set(key, value){
+    try{ localStorage.setItem(key, value); }catch(e){}
+    memStore[key] = value;
+  },
+  async listKeys(prefix){
+    const found = new Set();
+    try{ for(let i=0;i<localStorage.length;i++){ const k = localStorage.key(i); if(k && k.startsWith(prefix)) found.add(k); } }catch(e){}
+    Object.keys(memStore).forEach(k => { if(k.startsWith(prefix)) found.add(k); });
+    return Array.from(found);
+  }
+};
+function safeParse(text, fallback){
+  if(text == null) return fallback;
+  try{ const v = JSON.parse(text); return v == null ? fallback : v; } catch(e){ return fallback; }
+}
+
+let questionPool = [];
+
+async function initSite(){
+  let storedVersion = null;
+  try{ storedVersion = await Store.get("content-version"); }catch(e){}
+  if(storedVersion !== String(SEED_VERSION)){
+    questionPool = SEED_QUESTIONS.slice();
+    try{ await Store.set("question-pool", JSON.stringify(questionPool)); }catch(e){ console.error(e); }
+    try{ await Store.set("content-version", String(SEED_VERSION)); }catch(e){ console.error(e); }
+  }else{
+    const raw = await Store.get("question-pool");
+    const parsed = safeParse(raw, null);
+    questionPool = Array.isArray(parsed) && parsed.length ? parsed : SEED_QUESTIONS.slice();
+  }
+  loadPanelResults();
+  renderManageQuestionList();
+}
+initSite();
+
+async function saveQuestionPool(){
+  await Store.set("question-pool", JSON.stringify(questionPool));
+}
+
+/* ============================================================
+   Navigasyon
+   ============================================================ */
+document.querySelectorAll('nav button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.view).classList.add('active');
+  });
+});
+document.querySelectorAll('.panel-subnav button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.panel-subnav button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.subview').forEach(v=>v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.sub).classList.add('active');
+  });
+});
+
+/* ============================================================
+   Quiz akışı
+   ============================================================ */
+let currentStudent = null;
+
+document.getElementById('start-quiz-btn').addEventListener('click', ()=>{
+  const name = document.getElementById('student-name').value.trim();
+  const no = document.getElementById('student-no').value.trim();
+  const errEl = document.getElementById('quiz-setup-error');
+  if(!name || !no){ errEl.textContent = "Lütfen ad-soyad ve öğrenci numaranızı girin."; return; }
+  if(!questionPool.length){ errEl.textContent = "Henüz soru eklenmemiş."; return; }
+  errEl.textContent = "";
+  currentStudent = { name, no };
+  document.getElementById('quiz-setup').style.display = 'none';
+  document.getElementById('quiz-result').style.display = 'none';
+  document.getElementById('quiz-run').style.display = 'block';
+  renderQuizQuestions();
+});
+
+function renderQuizQuestions(){
+  document.getElementById('quiz-questions').innerHTML = questionPool.map((q, qi) => `
+    <div class="question">
+      <div class="q-text"><span class="q-num">${qi+1}.</span> ${q.q}</div>
+      ${q.options.map((opt, oi) => `
+        <label class="opt"><input type="radio" name="q${qi}" value="${oi}"><span>${opt}</span></label>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+document.getElementById('submit-quiz-btn').addEventListener('click', async ()=>{
+  let correctCount = 0;
+  const detail = questionPool.map((q, qi) => {
+    const checked = document.querySelector(`input[name="q${qi}"]:checked`);
+    const given = checked ? parseInt(checked.value, 10) : null;
+    const isCorrect = given === q.correct;
+    if(isCorrect) correctCount++;
+    return { question: q.q, isCorrect, correct: q.correct, explain: q.explain, options: q.options };
+  });
+  const total = questionPool.length;
+  const score = Math.round((correctCount/total)*100);
+  renderQuizResult(detail, correctCount, total, score);
+
+  const submissionKey = `submission:${currentStudent.no}:${Date.now()}`;
+  const record = { name: currentStudent.name, no: currentStudent.no, score, correctCount, total, submittedAt: new Date().toISOString() };
+  try{ await Store.set(submissionKey, JSON.stringify(record)); }catch(e){ console.error("Kayıt hatası:", e); }
+});
+
+function renderQuizResult(detail, correctCount, total, score){
+  document.getElementById('quiz-run').style.display = 'none';
+  const resultEl = document.getElementById('quiz-result');
+  resultEl.style.display = 'block';
+  const boxClass = score >= 50 ? '' : 'fail';
+  const stamp = new Date().toLocaleString('tr-TR');
+  const codeData = `${currentStudent.no} | ${currentStudent.name} | ${correctCount}/${total} | %${score} | ${stamp}`;
+  const codeLine = buildResultCode(codeData);
+
+  resultEl.innerHTML = `
+    <div class="result-box ${boxClass}">
+      <h3 style="margin-top:0;font-family:var(--serif);">Sonuç: ${correctCount}/${total} — %${score}</h3>
+      ${detail.map((d, i) => `
+        <div style="margin-top:14px;">
+          <div><strong>${i+1}. ${d.question}</strong></div>
+          <div class="${d.isCorrect ? 'correct-mark' : 'wrong-mark'}">
+            ${d.isCorrect ? 'Doğru' : 'Yanlış'}
+            ${!d.isCorrect ? ' — Doğru cevap: ' + d.options[d.correct] : ''}
+          </div>
+          <div class="explain">${d.explain || ''}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="margin-top:22px;">
+      <strong>Sonuç bildirimi</strong>
+      <p class="muted" style="margin:4px 0;">Aşağıdaki satırı kopyalayıp mehmethyt67@gmail.com gönderin.</p>
+      <div class="code-box" id="result-code">${codeLine}</div>
+      <button class="ghost" id="copy-code-btn" style="margin-top:10px;">Kopyala</button>
+      <span class="ok-msg" id="copy-ok" style="margin-left:8px;"></span>
+    </div>
+  `;
+  document.getElementById('copy-code-btn').addEventListener('click', async ()=>{
+    const okEl = document.getElementById('copy-ok');
+    try{ await navigator.clipboard.writeText(codeLine); okEl.textContent = "Kopyalandı."; }
+    catch(e){ okEl.textContent = "Kopyalanamadı, metni elle seçin."; }
+  });
+}
+
+/* ============================================================
+   Öğretim Elemanı Paneli
+   ============================================================ */
+document.getElementById('panel-unlock-btn').addEventListener('click', ()=>{
+  const pass = document.getElementById('panel-pass').value;
+  const errEl = document.getElementById('panel-error');
+  if(pass !== TEACHER_KEY){ errEl.textContent = "Erişim anahtarı yanlış."; return; }
+  errEl.textContent = "";
+  document.getElementById('panel-lock').style.display = 'none';
+  document.getElementById('panel-content').style.display = 'block';
+});
+
+document.getElementById('verify-btn').addEventListener('click', ()=>{
+  const line = document.getElementById('verify-input').value.trim();
+  const resEl = document.getElementById('verify-result');
+  if(!line){ resEl.innerHTML = ''; return; }
+  const { ok, reason } = verifyResultCode(line);
+  resEl.innerHTML = `<span class="${ok ? 'correct-mark' : 'wrong-mark'}">${ok ? 'Geçerli ✓' : 'Geçersiz ✗'}</span> — ${reason}`;
+});
+
+async function loadPanelResults(){
+  const resultsEl = document.getElementById('panel-results');
+  resultsEl.innerHTML = '<p class="muted">Yükleniyor…</p>';
+  try{
+    const keys = await Store.listKeys('submission:');
+    if(keys.length === 0){ resultsEl.innerHTML = '<p class="muted">Henüz kayıtlı sonuç yok.</p>'; return; }
+    const records = [];
+    for(const k of keys){ const raw = await Store.get(k); const rec = safeParse(raw, null); if(rec) records.push(rec); }
+    records.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+    resultsEl.innerHTML = `
+      <table class="results">
+        <thead><tr><th>Ad Soyad</th><th>Öğrenci No</th><th>Skor</th><th>Doğru/Toplam</th><th>Tarih</th></tr></thead>
+        <tbody>
+          ${records.map(r => `
+            <tr><td>${r.name}</td><td>${r.no}</td><td>%${r.score}</td><td>${r.correctCount}/${r.total}</td><td>${new Date(r.submittedAt).toLocaleString('tr-TR')}</td></tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }catch(e){ resultsEl.innerHTML = '<p class="error-msg">Sonuçlar yüklenemedi.</p>'; console.error(e); }
+}
+
+/* ---- Toplu soru yükleme ---- */
+function parseBulkQuestions(raw){
+  const errors = []; const parsed = [];
+  const blocks = raw.replace(/\r/g,'').split(/\n\s*\n+/).map(b=>b.trim()).filter(Boolean);
+  blocks.forEach((block, bi)=>{
+    const lines = block.split('\n').map(l=>l.trim()).filter(Boolean);
+    let qLines = [], options = [], correctLetter = null, explain = '', phase = 'q';
+    for(const line of lines){
+      const optMatch = line.match(/^([A-Ea-e])\s*[\)\.\-]\s*(.+)$/);
+      const ansMatch = line.match(/^(Cevap|Doğru cevap|Answer)\s*[:\-]\s*([A-Ea-e])\b/i);
+      const expMatch = line.match(/^(Açıklama|Aciklama|Explanation)\s*[:\-]\s*(.+)$/i);
+      if(ansMatch){ correctLetter = ansMatch[2].toUpperCase(); phase = 'after'; }
+      else if(expMatch){ explain = expMatch[2]; phase = 'after'; }
+      else if(optMatch && phase !== 'after'){ options.push(optMatch[2]); phase = 'opt'; }
+      else if(phase === 'q'){ qLines.push(line); }
+      else if(phase === 'opt' && options.length){ options[options.length-1] += ' ' + line; }
+      else if(phase === 'after' && explain){ explain += ' ' + line; }
+    }
+    const qText = qLines.join(' ').replace(/^\s*\d+\s*[\)\.\-]\s*/, '').trim();
+    const n = bi + 1;
+    if(!qText){ errors.push(`${n}. blok: soru metni bulunamadı.`); return; }
+    if(options.length < 2){ errors.push(`${n}. blok ("${qText.slice(0,40)}…"): en az 2 seçenek gerekli.`); return; }
+    if(!correctLetter){ errors.push(`${n}. blok ("${qText.slice(0,40)}…"): "Cevap:" satırı eksik.`); return; }
+    const idx = correctLetter.charCodeAt(0) - 65;
+    if(idx < 0 || idx >= options.length){ errors.push(`${n}. blok ("${qText.slice(0,40)}…"): "Cevap: ${correctLetter}" seçeneklerle uyuşmuyor.`); return; }
+    parsed.push({ id:`q${Date.now()}_${bi}`, q:qText, options, correct:idx, explain });
+  });
+  return { parsed, errors };
+}
+
+document.getElementById('bulk-preview-btn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('bulk-error'); const okEl = document.getElementById('bulk-ok');
+  errEl.innerHTML = ''; okEl.textContent = '';
+  const raw = document.getElementById('bulk-text').value.trim();
+  if(!raw){ errEl.textContent = "Yüklenecek metin boş."; return; }
+  const { parsed, errors } = parseBulkQuestions(raw);
+  if(errors.length){ errEl.innerHTML = `<strong>${errors.length} blok okunamadı, hiçbiri yüklenmedi:</strong><br>` + errors.join('<br>'); return; }
+  if(!parsed.length){ errEl.textContent = "Geçerli soru bulunamadı."; return; }
+
+  if(document.getElementById('bulk-replace').checked){ questionPool = parsed; }
+  else{ questionPool = questionPool.concat(parsed); }
+  await saveQuestionPool();
+
+  okEl.textContent = `${parsed.length} soru yüklendi. (Toplam: ${questionPool.length})`;
+  document.getElementById('bulk-text').value = '';
+  renderManageQuestionList();
+});
+
+/* ---- Tek soru ekle ---- */
+document.getElementById('add-question-btn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('q-error-msg'); const okEl = document.getElementById('q-ok-msg');
+  errEl.textContent = ''; okEl.textContent = '';
+  const qText = document.getElementById('q-text-input').value.trim();
+  const opts = [0,1,2,3].map(i => document.getElementById(`opt-${i}`).value.trim());
+  const correctIdx = parseInt(document.querySelector('input[name="correct-opt"]:checked').value, 10);
+  const explain = document.getElementById('q-explain-input').value.trim();
+  if(!qText || opts.some(o => !o)){ errEl.textContent = "Soru metni ve dört seçeneğin tümü doldurulmalı."; return; }
+  questionPool.push({ id:`q${Date.now()}`, q:qText, options:opts, correct:correctIdx, explain });
+  await saveQuestionPool();
+  okEl.textContent = "Soru eklendi.";
+  document.getElementById('q-text-input').value = '';
+  [0,1,2,3].forEach(i => document.getElementById(`opt-${i}`).value = '');
+  document.getElementById('q-explain-input').value = '';
+  document.querySelector('input[name="correct-opt"][value="0"]').checked = true;
+  renderManageQuestionList();
+});
+
+/* ---- Mevcut soruları listele / sil ---- */
+function renderManageQuestionList(){
+  const listEl = document.getElementById('manage-question-list');
+  if(!questionPool.length){ listEl.innerHTML = '<p class="muted">Henüz soru eklenmedi.</p>'; return; }
+  listEl.innerHTML = questionPool.map((q, i) => `
+    <div class="q-manage-item">
+      <div class="txt"><div>${i+1}. ${q.q}</div><div class="ans">Doğru cevap: ${q.options[q.correct]}</div></div>
+      <button class="danger" data-qid="${q.id}">Sil</button>
+    </div>
+  `).join('');
+  listEl.querySelectorAll('button.danger').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      questionPool = questionPool.filter(q => q.id !== btn.dataset.qid);
+      await saveQuestionPool();
+      renderManageQuestionList();
+    });
+  });
+}
+</script>
+
+</body>
+</html>
